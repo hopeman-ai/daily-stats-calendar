@@ -438,6 +438,135 @@
             margin-left: 4px;
         }
 
+        /* 요약 결과 모달 */
+        .summary-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+        }
+
+        .summary-modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .summary-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .summary-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .summary-header h2 {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .summary-header .sub-title {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .summary-text {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            line-height: 1.8;
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 20px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .summary-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .summary-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .summary-btn:hover {
+            background: #f5f5f5;
+            border-color: #4CAF50;
+        }
+
+        .summary-btn.primary {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .summary-btn.primary:hover {
+            background: #45a049;
+        }
+
+        .summary-close {
+            width: 100%;
+            padding: 10px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .summary-close:hover {
+            background: #d0d0d0;
+        }
+
+        .share-canvas {
+            display: none;
+        }
+
+        .saved-summary {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .saved-summary-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .saved-summary-text {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+
         /* Copyright */
         .copyright {
             text-align: center;
@@ -614,6 +743,36 @@
                 margin-top: 5px;
             }
 
+            .summary-content {
+                padding: 35px;
+            }
+
+            .summary-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .summary-text {
+                padding: 25px;
+                font-size: 16px;
+            }
+
+            .summary-btn {
+                padding: 14px;
+                font-size: 15px;
+            }
+
+            .saved-summary {
+                padding: 18px;
+            }
+
+            .saved-summary-label {
+                font-size: 13px;
+            }
+
+            .saved-summary-text {
+                font-size: 15px;
+            }
+
             .copyright {
                 font-size: 12px;
                 margin-top: 40px;
@@ -686,11 +845,41 @@
                     <textarea id="memo-input" placeholder="오늘 하루를 한 줄로 기록해보세요"></textarea>
                 </div>
 
+                <!-- 저장된 요약 표시 -->
+                <div id="saved-summary-container" style="display:none;">
+                    <div class="saved-summary">
+                        <div class="saved-summary-label">오늘의 한 문장</div>
+                        <div class="saved-summary-text" id="saved-summary-text"></div>
+                    </div>
+                </div>
+
                 <button type="submit" class="save-btn">저장</button>
                 <button type="button" class="delete-btn" id="delete-btn" style="display:none;">삭제</button>
             </form>
         </div>
     </div>
+
+    <!-- 요약 결과 모달 -->
+    <div id="summary-modal" class="summary-modal">
+        <div class="summary-content">
+            <div class="summary-header">
+                <h2>오늘의 한 문장</h2>
+                <p class="sub-title">오늘 하루를 한 문장으로 정리했습니다</p>
+            </div>
+
+            <div class="summary-text" id="summary-text"></div>
+
+            <div class="summary-actions">
+                <button class="summary-btn" id="copy-summary-btn">📋 문장 복사</button>
+                <button class="summary-btn" id="share-summary-btn">📤 원하면 공유</button>
+            </div>
+
+            <button class="summary-close" id="close-summary-modal">확인</button>
+        </div>
+    </div>
+
+    <!-- 공유용 캔버스 (숨김) -->
+    <canvas id="share-canvas" class="share-canvas" width="800" height="600"></canvas>
 
     <script>
         class DailyStatsApp {
@@ -794,6 +983,10 @@
                 document.getElementById('tags-input').value = '';
                 document.getElementById('memo-input').value = '';
 
+                // 저장된 요약 초기화
+                const savedSummaryContainer = document.getElementById('saved-summary-container');
+                savedSummaryContainer.style.display = 'none';
+
                 // 기존 데이터 로드
                 if (record) {
                     const energyBtn = document.querySelector(`[data-energy="${record.energy}"]`);
@@ -801,6 +994,12 @@
                     document.getElementById('tags-input').value = record.tags.join(' ');
                     document.getElementById('memo-input').value = record.memo || '';
                     document.getElementById('delete-btn').style.display = 'block';
+
+                    // 저장된 요약 표시
+                    if (record.summary) {
+                        document.getElementById('saved-summary-text').textContent = record.summary;
+                        savedSummaryContainer.style.display = 'block';
+                    }
                 } else {
                     document.getElementById('delete-btn').style.display = 'none';
                 }
@@ -832,10 +1031,21 @@
                 }
 
                 const dateKey = this.getDateKey(this.selectedDate);
-                this.data[dateKey] = { energy, tags, memo };
+                const existingRecord = this.data[dateKey];
+
+                // 요약 문장 생성
+                const summary = this.generateDailySummary(energy, tags, memo);
+
+                // 데이터 저장 (요약 포함)
+                this.data[dateKey] = { energy, tags, memo, summary };
                 this.saveData();
                 this.closeModal();
                 this.renderCalendar();
+
+                // 새로 저장한 경우에만 요약 모달 표시 (기존 기록 수정 시에는 표시하지 않음)
+                if (!existingRecord) {
+                    this.showSummaryModal(summary);
+                }
             }
 
             deleteRecord() {
@@ -846,6 +1056,163 @@
                     this.closeModal();
                     this.renderCalendar();
                 }
+            }
+
+            generateDailySummary(energy, tags, memo) {
+                // 에너지 상태 표현
+                const energyMap = {
+                    '높음': '에너지가 높았고',
+                    '보통': '에너지는 보통이었고',
+                    '낮음': '에너지가 낮았고'
+                };
+
+                const energyPhrase = energyMap[energy];
+
+                // 태그 처리 (# 제거하고 자연스럽게 표현)
+                const cleanTags = tags.map(tag => tag.replace('#', ''));
+                let tagPhrase = '';
+
+                if (cleanTags.length === 1) {
+                    tagPhrase = `${cleanTags[0]}`;
+                } else if (cleanTags.length === 2) {
+                    tagPhrase = `${cleanTags[0]}와 ${cleanTags[1]}`;
+                }
+
+                // 메모 기반 분위기 감지 (키워드 분석)
+                let moodModifier = '';
+                if (memo) {
+                    const positiveWords = ['좋', '행복', '기쁨', '즐거', '만족', '성공', '잘'];
+                    const negativeWords = ['힘들', '피곤', '지침', '어려', '아쉬', '실망', '불안'];
+                    const neutralWords = ['생각', '고민', '정리', '계획', '준비'];
+
+                    const memoLower = memo.toLowerCase();
+                    const hasPositive = positiveWords.some(word => memoLower.includes(word));
+                    const hasNegative = negativeWords.some(word => memoLower.includes(word));
+                    const hasNeutral = neutralWords.some(word => memoLower.includes(word));
+
+                    if (hasNegative) {
+                        moodModifier = '에 집중하면서도 어려움이 있었던';
+                    } else if (hasPositive) {
+                        moodModifier = '에 집중하며 만족스러웠던';
+                    } else if (hasNeutral) {
+                        moodModifier = '에 대해 생각할 시간이 있었던';
+                    } else {
+                        moodModifier = '을 중심으로 보낸';
+                    }
+                } else {
+                    moodModifier = '을 중심으로 보낸';
+                }
+
+                // 문장 패턴 선택
+                const patterns = [
+                    `오늘은 ${energyPhrase}, ${tagPhrase}${moodModifier} 하루였습니다.`,
+                    `${energyPhrase}, ${tagPhrase}${moodModifier} 하루였습니다.`
+                ];
+
+                // 간단한 랜덤 선택 (날짜 기반으로 일관성 유지)
+                const patternIndex = this.selectedDate.getDate() % patterns.length;
+                return patterns[patternIndex];
+            }
+
+            showSummaryModal(summary) {
+                document.getElementById('summary-text').textContent = summary;
+                document.getElementById('summary-modal').classList.add('active');
+            }
+
+            closeSummaryModal() {
+                document.getElementById('summary-modal').classList.remove('active');
+            }
+
+            async copySummaryToClipboard() {
+                const summaryText = document.getElementById('summary-text').textContent;
+
+                try {
+                    await navigator.clipboard.writeText(summaryText);
+                    alert('문장이 복사되었습니다.');
+                } catch (err) {
+                    // 폴백: textarea 사용
+                    const textarea = document.createElement('textarea');
+                    textarea.value = summaryText;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    alert('문장이 복사되었습니다.');
+                }
+            }
+
+            generateShareImage() {
+                const canvas = document.getElementById('share-canvas');
+                const ctx = canvas.getContext('2d');
+                const summaryText = document.getElementById('summary-text').textContent;
+
+                // 배경
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 800, 600);
+
+                // 메인 텍스트 영역
+                ctx.fillStyle = '#f5f5f5';
+                ctx.fillRect(40, 150, 720, 280);
+
+                // 요약 문장
+                ctx.fillStyle = '#333333';
+                ctx.font = '28px "Segoe UI", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // 긴 문장 줄바꿈 처리
+                const maxWidth = 680;
+                const words = summaryText.split(' ');
+                let line = '';
+                let y = 290;
+                const lineHeight = 40;
+
+                for (let word of words) {
+                    const testLine = line + word;
+                    const metrics = ctx.measureText(testLine);
+
+                    if (metrics.width > maxWidth && line !== '') {
+                        ctx.fillText(line, 400, y);
+                        line = word + ' ';
+                        y += lineHeight;
+                    } else {
+                        line = testLine + ' ';
+                    }
+                }
+                ctx.fillText(line, 400, y);
+
+                // 하단 서비스명
+                ctx.fillStyle = '#999999';
+                ctx.font = '18px "Segoe UI", sans-serif';
+                ctx.fillText('요즘 어때?', 400, 520);
+
+                // 이미지 다운로드 또는 공유
+                canvas.toBlob((blob) => {
+                    const file = new File([blob], 'daily-summary.png', { type: 'image/png' });
+
+                    // Web Share API 지원 확인
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({
+                            files: [file],
+                            title: '오늘의 한 문장',
+                            text: summaryText
+                        }).catch(err => {
+                            // 공유 취소 시 다운로드
+                            this.downloadImage(canvas);
+                        });
+                    } else {
+                        // Web Share API 미지원 시 다운로드
+                        this.downloadImage(canvas);
+                    }
+                });
+            }
+
+            downloadImage(canvas) {
+                const link = document.createElement('a');
+                link.download = 'daily-summary.png';
+                link.href = canvas.toDataURL();
+                link.click();
+                alert('이미지가 다운로드되었습니다.');
             }
 
             renderStats() {
@@ -1020,6 +1387,18 @@
                         this.renderStats();
                     });
                 });
+
+                // 요약 모달 이벤트
+                document.getElementById('close-summary-modal').addEventListener('click', () => this.closeSummaryModal());
+                document.getElementById('summary-modal').addEventListener('click', (e) => {
+                    if (e.target.id === 'summary-modal') this.closeSummaryModal();
+                });
+
+                // 복사 버튼
+                document.getElementById('copy-summary-btn').addEventListener('click', () => this.copySummaryToClipboard());
+
+                // 공유 버튼
+                document.getElementById('share-summary-btn').addEventListener('click', () => this.generateShareImage());
             }
         }
 
