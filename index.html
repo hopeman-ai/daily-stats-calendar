@@ -1042,10 +1042,11 @@
                 this.closeModal();
                 this.renderCalendar();
 
-                // 새로 저장한 경우에만 요약 모달 표시 (기존 기록 수정 시에는 표시하지 않음)
-                if (!existingRecord) {
+                // 모달 transition이 완료된 후 요약 모달 표시
+                // setTimeout으로 타이밍 이슈 해결
+                setTimeout(() => {
                     this.showSummaryModal(summary);
-                }
+                }, 300);
             }
 
             deleteRecord() {
@@ -1059,6 +1060,8 @@
             }
 
             generateDailySummary(energy, tags, memo) {
+                console.log('🔄 요약 생성 시작 - 에너지:', energy, '태그:', tags, '메모:', memo);
+
                 // 에너지 상태 표현
                 const energyMap = {
                     '높음': '에너지가 높았고',
@@ -1111,12 +1114,25 @@
 
                 // 간단한 랜덤 선택 (날짜 기반으로 일관성 유지)
                 const patternIndex = this.selectedDate.getDate() % patterns.length;
-                return patterns[patternIndex];
+                const summary = patterns[patternIndex];
+
+                console.log('✅ 요약 생성 완료:', summary);
+                return summary;
             }
 
             showSummaryModal(summary) {
-                document.getElementById('summary-text').textContent = summary;
-                document.getElementById('summary-modal').classList.add('active');
+                console.log('📝 요약 모달 표시:', summary);
+                const summaryModal = document.getElementById('summary-modal');
+                const summaryText = document.getElementById('summary-text');
+
+                if (!summaryModal || !summaryText) {
+                    console.error('요약 모달 DOM 요소를 찾을 수 없습니다.');
+                    return;
+                }
+
+                summaryText.textContent = summary;
+                summaryModal.classList.add('active');
+                console.log('✅ 요약 모달 활성화 완료');
             }
 
             closeSummaryModal() {
