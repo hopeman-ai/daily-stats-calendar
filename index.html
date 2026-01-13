@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>일상 통계 캘린더</title>
+    <title>요즘 어때?</title>
     <style>
         * {
             margin: 0;
@@ -417,6 +417,16 @@
             margin-left: 4px;
         }
 
+        /* Copyright */
+        .copyright {
+            text-align: center;
+            color: #999;
+            font-size: 11px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
         /* 데스크톱 최적화 (768px 이상) */
         @media (min-width: 768px) {
             body {
@@ -576,12 +586,17 @@
                 font-size: 12px;
                 margin-top: 5px;
             }
+
+            .copyright {
+                font-size: 12px;
+                margin-top: 40px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📅 일상 통계 캘린더</h1>
+        <h1>📅 요즘 어때?</h1>
 
         <div class="tabs">
             <button class="tab active" data-view="calendar">캘린더</button>
@@ -605,6 +620,10 @@
                 <button class="period-btn" data-period="30">최근 30일</button>
             </div>
             <div id="stats-content"></div>
+        </div>
+
+        <div class="copyright">
+            Copyright 2026. Heeseok Choi
         </div>
     </div>
 
