@@ -1140,7 +1140,7 @@
 
             <form id="record-form">
                 <div class="form-group">
-                    <label>에너지 상태</label>
+                    <label>하루의 밀도</label>
                     <div class="energy-options">
                         <button type="button" class="energy-btn" data-energy="높음">높음 🔥</button>
                         <button type="button" class="energy-btn" data-energy="보통">보통 ⚡</button>
@@ -1670,7 +1670,7 @@
 
                 const selectedEnergy = document.querySelector('.energy-btn.selected');
                 if (!selectedEnergy) {
-                    alert('에너지 상태를 선택해주세요');
+                    alert('하루의 밀도를 선택해주세요');
                     return;
                 }
 
@@ -2237,7 +2237,7 @@
 
                 // 에너지 차트
                 html += '<div class="stats-section">';
-                html += '<h3>⚡ 에너지 상태 분포</h3>';
+                html += '<h3>⚡ 하루의 밀도 분포</h3>';
                 html += '<div class="energy-chart">';
 
                 const maxCount = Math.max(...Object.values(energyCount));
@@ -2287,7 +2287,7 @@
                 } else if (highRatio > 0.5) {
                     insights.push('최근 에너지가 높은 날이 많았습니다. 좋은 컨디션을 유지하고 계시네요!');
                 } else if (energyCount['보통'] > energyCount['높음'] && energyCount['보통'] > energyCount['낮음']) {
-                    insights.push('최근 에너지 상태가 안정적으로 유지되고 있습니다.');
+                    insights.push('최근 하루의 밀도가 안정적으로 유지되고 있습니다.');
                 }
 
                 // 태그 해석
