@@ -2128,6 +2128,65 @@
                 alert('이미지가 다운로드되었습니다.');
             }
 
+            /**
+             * 한글 텍스트 줄바꿈 처리
+             * Canvas에서 텍스트를 maxWidth에 맞게 여러 줄로 나눔
+             */
+            wrapKoreanText(ctx, text, maxWidth) {
+                const lines = [];
+                let currentLine = '';
+
+                for (let i = 0; i < text.length; i++) {
+                    const char = text[i];
+                    const testLine = currentLine + char;
+                    const metrics = ctx.measureText(testLine);
+
+                    if (metrics.width > maxWidth && currentLine !== '') {
+                        lines.push(currentLine);
+                        currentLine = char;
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+
+                return lines;
+            }
+
+            /**
+             * 이미지 공유 또는 다운로드
+             * Web Share API 지원 시 공유, 미지원 시 다운로드
+             */
+            shareOrDownloadImage(canvas) {
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        alert('이미지 생성에 실패했습니다.');
+                        return;
+                    }
+
+                    const file = new File([blob], 'daily-summary.png', { type: 'image/png' });
+
+                    // Web Share API 지원 확인
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({
+                            files: [file],
+                            title: '오늘의 한 문장',
+                            text: '요즘 어때?'
+                        }).catch(err => {
+                            // 공유 취소 시 다운로드
+                            console.log('공유 취소됨, 다운로드로 전환');
+                            this.downloadImage(canvas);
+                        });
+                    } else {
+                        // Web Share API 미지원 시 다운로드
+                        this.downloadImage(canvas);
+                    }
+                }, 'image/png');
+            }
+
             renderStats() {
                 const days = this.statsPeriod;
                 const today = new Date();
