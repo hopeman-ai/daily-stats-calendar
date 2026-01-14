@@ -567,6 +567,16 @@
             line-height: 1.6;
         }
 
+        /* 오늘의 한 문장 버튼 스타일 */
+        .saved-summary .summary-btn:hover {
+            background: #4CAF50 !important;
+            color: white !important;
+        }
+
+        .saved-summary .summary-btn:active {
+            transform: scale(0.98);
+        }
+
         /* Copyright */
         .copyright {
             text-align: center;
@@ -845,17 +855,23 @@
                     <textarea id="memo-input" placeholder="오늘 하루를 한 줄로 기록해보세요"></textarea>
                 </div>
 
-                <!-- 저장된 요약 표시 -->
-                <div id="saved-summary-container" style="display:none;">
-                    <div class="saved-summary">
-                        <div class="saved-summary-label">오늘의 한 문장</div>
-                        <div class="saved-summary-text" id="saved-summary-text"></div>
-                    </div>
-                </div>
-
                 <button type="submit" class="save-btn">저장</button>
                 <button type="button" class="delete-btn" id="delete-btn" style="display:none;">삭제</button>
             </form>
+
+            <!-- 저장된 요약 표시 -->
+            <div id="saved-summary-container" style="display:none;">
+                <div class="saved-summary">
+                    <div class="saved-summary-label">오늘의 한 문장</div>
+                    <div class="saved-summary-text" id="saved-summary-text"></div>
+
+                    <!-- 버튼 영역 -->
+                    <div class="summary-actions" style="display: flex; gap: 8px; margin-top: 15px;">
+                        <button type="button" class="summary-btn" id="copy-sentence-btn" style="flex: 1; padding: 10px; border: 1px solid #4CAF50; background: white; color: #4CAF50; border-radius: 5px; cursor: pointer; font-size: 13px; transition: all 0.3s;">📋 문장 복사</button>
+                        <button type="button" class="summary-btn" id="share-sentence-btn" style="flex: 1; padding: 10px; border: 1px solid #4CAF50; background: white; color: #4CAF50; border-radius: 5px; cursor: pointer; font-size: 13px; transition: all 0.3s;">📤 원하면 공유</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1071,14 +1087,10 @@
                 // 데이터 저장 (요약 포함)
                 this.data[dateKey] = { energy, tags, memo, summary };
                 this.saveData();
+
+                // 모달 닫기 (저장 직후에는 문장을 보여주지 않음)
                 this.closeModal();
                 this.renderCalendar();
-
-                // 모달 transition이 완료된 후 요약 모달 표시
-                // setTimeout으로 타이밍 이슈 해결
-                setTimeout(() => {
-                    this.showSummaryModal(summary);
-                }, 300);
             }
 
             deleteRecord() {
@@ -1088,6 +1100,18 @@
                     this.saveData();
                     this.closeModal();
                     this.renderCalendar();
+                }
+            }
+
+            updateSummaryInModal(summary) {
+                const savedSummaryContainer = document.getElementById('saved-summary-container');
+                const savedSummaryText = document.getElementById('saved-summary-text');
+
+                if (summary) {
+                    savedSummaryText.textContent = summary;
+                    savedSummaryContainer.style.display = 'block';
+                } else {
+                    savedSummaryContainer.style.display = 'none';
                 }
             }
 
@@ -1315,6 +1339,90 @@
 
             closeSummaryModal() {
                 document.getElementById('summary-modal').classList.remove('active');
+            }
+
+            async copySentenceToClipboard() {
+                const sentenceText = document.getElementById('saved-summary-text').textContent;
+
+                if (!sentenceText) {
+                    alert('복사할 문장이 없습니다');
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(sentenceText);
+                    alert('문장이 복사되었습니다.');
+                } catch (err) {
+                    console.error('복사 실패:', err);
+                    // 폴백: textarea 방식
+                    const textArea = document.createElement('textarea');
+                    textArea.value = sentenceText;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+
+                    try {
+                        document.execCommand('copy');
+                        alert('문장이 복사되었습니다.');
+                    } catch (fallbackErr) {
+                        console.error('폴백 복사도 실패:', fallbackErr);
+                        alert('복사에 실패했습니다.');
+                    }
+
+                    document.body.removeChild(textArea);
+                }
+            }
+
+            shareSentence() {
+                const sentenceText = document.getElementById('saved-summary-text').textContent;
+
+                if (!sentenceText) {
+                    alert('공유할 문장이 없습니다');
+                    return;
+                }
+
+                // 이미지 생성 및 공유
+                this.generateShareImageFromText(sentenceText);
+            }
+
+            generateShareImageFromText(summaryText) {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const width = 800;
+                const height = 600;
+                canvas.width = width;
+                canvas.height = height;
+
+                // 배경
+                const gradient = ctx.createLinearGradient(0, 0, 0, height);
+                gradient.addColorStop(0, '#e8f5e9');
+                gradient.addColorStop(1, '#c8e6c9');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+
+                // 텍스트 스타일
+                ctx.fillStyle = '#2e7d32';
+                ctx.font = 'bold 28px "Segoe UI", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // 문장 줄바꿈
+                const lines = this.wrapKoreanText(ctx, summaryText, width - 100);
+                const lineHeight = 45;
+                const startY = (height - (lines.length * lineHeight)) / 2;
+
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, width / 2, startY + (i * lineHeight));
+                });
+
+                // 서비스명
+                ctx.fillStyle = '#66bb6a';
+                ctx.font = '20px "Segoe UI", sans-serif';
+                ctx.fillText('요즘 어때?', width / 2, height - 50);
+
+                // 이미지 공유/다운로드
+                this.shareOrDownloadImage(canvas);
             }
 
             async copySummaryToClipboard() {
@@ -1593,6 +1701,10 @@
 
                 // 공유 버튼
                 document.getElementById('share-summary-btn').addEventListener('click', () => this.generateShareImage());
+
+                // 모달 내 복사/공유 버튼
+                document.getElementById('copy-sentence-btn').addEventListener('click', () => this.copySentenceToClipboard());
+                document.getElementById('share-sentence-btn').addEventListener('click', () => this.shareSentence());
             }
         }
 
