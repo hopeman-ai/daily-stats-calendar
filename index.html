@@ -90,6 +90,18 @@
             display: block;
         }
 
+        /* 홈 태그라인 */
+        .home-tagline {
+            text-align: center;
+            color: #b0b0b0;
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            margin: 0 0 20px 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
         /* 캘린더 스타일 */
         .calendar-header {
             display: flex;
@@ -318,6 +330,172 @@
             font-size: 11px;
             color: #999;
             margin-top: 4px;
+        }
+
+        /* 만남 섹션 스타일 */
+        .meeting-section {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .meeting-toggle {
+            cursor: pointer;
+            user-select: none;
+            font-weight: 500;
+            color: #666;
+            font-size: 14px;
+            list-style: none;
+        }
+
+        .meeting-toggle::-webkit-details-marker {
+            display: none;
+        }
+
+        .meeting-toggle::before {
+            content: '▶';
+            display: inline-block;
+            margin-right: 5px;
+            transition: transform 0.2s;
+            font-size: 10px;
+        }
+
+        details[open] .meeting-toggle::before {
+            transform: rotate(90deg);
+        }
+
+        .meeting-fields {
+            margin-top: 12px;
+        }
+
+        .meeting-field {
+            margin-bottom: 10px;
+        }
+
+        .meeting-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .meeting-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .meeting-field input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .meeting-field input::placeholder {
+            color: #aaa;
+        }
+
+        /* 캘린더 날짜 만남 아이콘 */
+        .meeting-indicator {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 10px;
+            opacity: 0.5;
+        }
+
+        .meeting-count {
+            font-size: 8px;
+            vertical-align: super;
+            margin-left: 1px;
+        }
+
+        /* 복수 만남 UI 스타일 */
+        .meetings-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .meeting-entry {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            position: relative;
+        }
+
+        .meeting-entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .meeting-entry-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        .remove-meeting-btn {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .remove-meeting-btn:hover {
+            background: #d32f2f;
+        }
+
+        .add-meeting-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            background: #e8f5e9;
+            border: 2px dashed #4CAF50;
+            border-radius: 8px;
+            color: #4CAF50;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-meeting-btn:hover {
+            background: #c8e6c9;
+        }
+
+        .meeting-entry .meeting-field {
+            margin-bottom: 8px;
+        }
+
+        .meeting-entry .meeting-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .no-meetings-message {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            padding: 15px;
         }
 
         /* 통계 스타일 */
@@ -619,6 +797,12 @@
                 font-size: 16px;
             }
 
+            .home-tagline {
+                font-size: 15px;
+                margin: 0 0 25px 0;
+                letter-spacing: 0.03em;
+            }
+
             .calendar-header {
                 margin-bottom: 20px;
             }
@@ -804,6 +988,7 @@
 
         <!-- 캘린더 뷰 -->
         <div id="calendar-view" class="view active">
+            <p class="home-tagline">날짜 위에 남는 것은 기억입니다</p>
             <div class="calendar-header">
                 <button id="prev-month">◀ 이전</button>
                 <h2 id="current-month"></h2>
@@ -854,6 +1039,21 @@
                     <label>메모 (선택)</label>
                     <textarea id="memo-input" placeholder="오늘 하루를 한 줄로 기록해보세요"></textarea>
                 </div>
+
+                <!-- 만남 기록 (선택) - 복수 만남 지원 -->
+                <details class="form-group meeting-section" id="meeting-section">
+                    <summary class="meeting-toggle">
+                        <span>만남 (선택)</span>
+                    </summary>
+                    <div class="meeting-fields">
+                        <div id="meetings-container" class="meetings-container">
+                            <!-- 만남 항목들이 동적으로 추가됩니다 -->
+                        </div>
+                        <button type="button" class="add-meeting-btn" id="add-meeting-btn">
+                            <span>+</span> 만남 추가
+                        </button>
+                    </div>
+                </details>
 
                 <button type="submit" class="save-btn">저장</button>
                 <button type="button" class="delete-btn" id="delete-btn" style="display:none;">삭제</button>
@@ -954,6 +1154,100 @@
                 localStorage.setItem('yozumeottae_calendar_v1', JSON.stringify(this.data));
             }
 
+            // 기존 데이터 마이그레이션: meeting -> meetings 배열로 변환
+            getMeetingsFromRecord(record) {
+                if (!record) return [];
+
+                // 새 형식: meetings 배열
+                if (record.meetings && Array.isArray(record.meetings)) {
+                    return record.meetings.filter(m => m.time || m.place || m.person);
+                }
+
+                // 기존 형식: 단일 meeting 객체 -> 배열로 변환
+                if (record.meeting && (record.meeting.time || record.meeting.place || record.meeting.person)) {
+                    return [record.meeting];
+                }
+
+                return [];
+            }
+
+            // 만남 항목 HTML 생성
+            createMeetingEntryHTML(index, meeting = {}) {
+                return `
+                    <div class="meeting-entry" data-meeting-index="${index}">
+                        <div class="meeting-entry-header">
+                            <span class="meeting-entry-title">만남 ${index + 1}</span>
+                            <button type="button" class="remove-meeting-btn" data-remove-index="${index}">×</button>
+                        </div>
+                        <div class="meeting-field">
+                            <label>시간</label>
+                            <input type="text" class="meeting-time-input" placeholder="오후, 저녁, 14:00 등" value="${meeting.time || ''}" />
+                        </div>
+                        <div class="meeting-field">
+                            <label>장소</label>
+                            <input type="text" class="meeting-place-input" placeholder="연구실, 카페 등" value="${meeting.place || ''}" />
+                        </div>
+                        <div class="meeting-field">
+                            <label>만난 사람</label>
+                            <input type="text" class="meeting-person-input" placeholder="동료, 친구 등" value="${meeting.person || ''}" />
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 만남 목록 렌더링
+            renderMeetings(meetings = []) {
+                const container = document.getElementById('meetings-container');
+
+                if (meetings.length === 0) {
+                    container.innerHTML = '<div class="no-meetings-message">만남 추가 버튼을 눌러 기록하세요</div>';
+                } else {
+                    container.innerHTML = meetings.map((m, i) => this.createMeetingEntryHTML(i, m)).join('');
+                }
+
+                // 삭제 버튼 이벤트 바인딩
+                container.querySelectorAll('.remove-meeting-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const index = parseInt(e.target.dataset.removeIndex);
+                        this.removeMeetingEntry(index);
+                    });
+                });
+            }
+
+            // 새 만남 추가
+            addMeetingEntry() {
+                const container = document.getElementById('meetings-container');
+                const currentMeetings = this.collectMeetingsFromForm();
+                currentMeetings.push({ time: '', place: '', person: '' });
+                this.renderMeetings(currentMeetings);
+
+                // 만남 섹션 펼치기
+                document.getElementById('meeting-section').open = true;
+            }
+
+            // 만남 삭제
+            removeMeetingEntry(index) {
+                const currentMeetings = this.collectMeetingsFromForm();
+                currentMeetings.splice(index, 1);
+                this.renderMeetings(currentMeetings);
+            }
+
+            // 폼에서 현재 만남 데이터 수집
+            collectMeetingsFromForm() {
+                const entries = document.querySelectorAll('.meeting-entry');
+                const meetings = [];
+
+                entries.forEach(entry => {
+                    const time = entry.querySelector('.meeting-time-input').value.trim();
+                    const place = entry.querySelector('.meeting-place-input').value.trim();
+                    const person = entry.querySelector('.meeting-person-input').value.trim();
+
+                    meetings.push({ time, place, person });
+                });
+
+                return meetings;
+            }
+
             getDateKey(date) {
                 return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             }
@@ -1006,6 +1300,20 @@
                         const energy = this.data[dateKey].energy;
                         indicator.textContent = energy === '높음' ? '🔥' : energy === '보통' ? '⚡' : '🌙';
                         dayEl.appendChild(indicator);
+
+                        // 만남 아이콘 표시 (복수 만남 지원)
+                        const record = this.data[dateKey];
+                        const meetings = this.getMeetingsFromRecord(record);
+                        if (meetings.length > 0) {
+                            const meetingIcon = document.createElement('span');
+                            meetingIcon.className = 'meeting-indicator';
+                            if (meetings.length === 1) {
+                                meetingIcon.textContent = '👤';
+                            } else {
+                                meetingIcon.innerHTML = '👤<span class="meeting-count">' + meetings.length + '</span>';
+                            }
+                            dayEl.appendChild(meetingIcon);
+                        }
                     }
 
                     const number = document.createElement('div');
@@ -1031,6 +1339,10 @@
                 document.getElementById('tags-input').value = '';
                 document.getElementById('memo-input').value = '';
 
+                // 만남 필드 초기화
+                this.renderMeetings([]);
+                document.getElementById('meeting-section').open = false;
+
                 // 저장된 요약 초기화
                 const savedSummaryContainer = document.getElementById('saved-summary-container');
                 savedSummaryContainer.style.display = 'none';
@@ -1047,6 +1359,15 @@
                     if (record.summary) {
                         document.getElementById('saved-summary-text').textContent = record.summary;
                         savedSummaryContainer.style.display = 'block';
+                    }
+
+                    // 만남 데이터 로드 (복수 만남 지원)
+                    const meetings = this.getMeetingsFromRecord(record);
+                    this.renderMeetings(meetings);
+
+                    // 만남 데이터가 있으면 섹션 펼치기
+                    if (meetings.length > 0) {
+                        document.getElementById('meeting-section').open = true;
                     }
                 } else {
                     document.getElementById('delete-btn').style.display = 'none';
@@ -1073,6 +1394,11 @@
                 const tags = tagsInput.split(/\s+/).filter(t => t.startsWith('#')).slice(0, 2);
                 const memo = document.getElementById('memo-input').value.trim();
 
+                // 만남 데이터 수집 (복수 만남)
+                const allMeetings = this.collectMeetingsFromForm();
+                // 빈 만남 항목 제거 (최소 하나의 필드라도 입력된 것만 저장)
+                const meetings = allMeetings.filter(m => m.time || m.place || m.person);
+
                 if (tags.length === 0) {
                     alert('태그를 1개 이상 입력해주세요 (#으로 시작)');
                     return;
@@ -1084,8 +1410,8 @@
                 // 요약 문장 생성
                 const summary = this.generateDailySummary(energy, tags, memo);
 
-                // 데이터 저장 (요약 포함)
-                this.data[dateKey] = { energy, tags, memo, summary };
+                // 데이터 저장 (요약 및 복수 만남 포함)
+                this.data[dateKey] = { energy, tags, memo, summary, meetings };
                 this.saveData();
 
                 // 모달 닫기 (저장 직후에는 문장을 보여주지 않음)
@@ -1679,6 +2005,9 @@
                 // 폼 제출
                 document.getElementById('record-form').addEventListener('submit', (e) => this.saveRecord(e));
                 document.getElementById('delete-btn').addEventListener('click', () => this.deleteRecord());
+
+                // 만남 추가 버튼
+                document.getElementById('add-meeting-btn').addEventListener('click', () => this.addMeetingEntry());
 
                 // 통계 기간 선택
                 document.querySelectorAll('.period-btn').forEach(btn => {
