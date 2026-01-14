@@ -498,6 +498,101 @@
             padding: 15px;
         }
 
+        /* 첫 방문자 환영 모달 */
+        .welcome-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 3000;
+        }
+
+        .welcome-modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .welcome-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .welcome-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .welcome-title {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .welcome-subtitle {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .welcome-notice {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .welcome-notice-icon {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .welcome-notice-text {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .welcome-start-btn {
+            width: 100%;
+            padding: 14px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .welcome-start-btn:hover {
+            background: #45a049;
+        }
+
+        /* 데이터 저장 위치 안내 (푸터) */
+        .privacy-notice {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            color: #aaa;
+            font-size: 11px;
+            margin-top: 15px;
+        }
+
+        .privacy-notice-icon {
+            font-size: 12px;
+        }
+
         /* 통계 스타일 */
         .stats-controls {
             display: flex;
@@ -1006,8 +1101,32 @@
             <div id="stats-content"></div>
         </div>
 
+        <div class="privacy-notice">
+            <span class="privacy-notice-icon">🔒</span>
+            <span>모든 기록은 이 기기에만 저장됩니다</span>
+        </div>
+
         <div class="copyright">
             Copyright 2026. Heeseok Choi
+        </div>
+    </div>
+
+    <!-- 첫 방문자 환영 모달 -->
+    <div id="welcome-modal" class="welcome-modal">
+        <div class="welcome-content">
+            <div class="welcome-icon">📅</div>
+            <h2 class="welcome-title">요즘 어때?</h2>
+            <p class="welcome-subtitle">하루하루의 에너지와 감정을<br>기록하는 나만의 캘린더</p>
+
+            <div class="welcome-notice">
+                <div class="welcome-notice-icon">🔒</div>
+                <p class="welcome-notice-text">
+                    모든 기록은 <strong>이 기기의 브라우저</strong>에만 저장됩니다.<br>
+                    다른 사람과 URL을 공유해도 내 기록은 보이지 않아요.
+                </p>
+            </div>
+
+            <button class="welcome-start-btn" id="welcome-start-btn">시작하기</button>
         </div>
     </div>
 
@@ -1098,60 +1217,226 @@
     <canvas id="share-canvas" class="share-canvas" width="800" height="600"></canvas>
 
     <script>
+        /**
+         * ============================================================
+         * 데이터 관리자 (DataManager)
+         * ============================================================
+         *
+         * [프라이버시 설계 원칙]
+         * 1. 모든 데이터는 오직 이 브라우저의 localStorage에만 저장
+         * 2. URL, 쿠키, 서버에는 절대 데이터를 저장하지 않음
+         * 3. URL 공유 시 다른 사람에게 데이터가 전달되지 않음
+         * 4. 각 브라우저는 완전히 독립된 데이터 공간을 가짐
+         *
+         * [localStorage 키 구조]
+         * - yozumeottae_calendar_v1    : 캘린더 기록 데이터 (핵심)
+         * - yozumeottae_visited        : 첫 방문 여부 (환영 모달용)
+         * - yozumeottae_browser_id     : 브라우저 식별자 (디버깅용)
+         *
+         * [데이터가 공유되지 않는 이유]
+         * localStorage는 웹 브라우저의 '동일 출처 정책(Same-Origin Policy)'에 따라
+         * 같은 도메인 + 같은 브라우저에서만 접근 가능합니다.
+         *
+         * 예시:
+         * - 사용자 A가 Chrome에서 기록 → A의 Chrome localStorage에만 저장
+         * - 사용자 B가 같은 URL을 Safari에서 열기 → B의 Safari localStorage는 비어있음
+         * - 따라서 B는 빈 캘린더를 보게 됨
+         *
+         * URL 공유 시 전달되는 것: 앱 주소만 (데이터 없음)
+         * 전달되지 않는 것: localStorage 내용, 사용자 기록
+         */
+        class DataManager {
+            // localStorage 키 상수 (앱 전용 네임스페이스)
+            static KEYS = {
+                CALENDAR_DATA: 'yozumeottae_calendar_v1',    // 캘린더 기록
+                VISITED: 'yozumeottae_visited',               // 첫 방문 여부
+                BROWSER_ID: 'yozumeottae_browser_id'          // 브라우저 식별자
+            };
+
+            constructor() {
+                this._data = null;
+                this._ensureBrowserId();
+            }
+
+            /**
+             * 브라우저 고유 식별자 생성 (디버깅/분석용)
+             * 실제 사용자 식별이 아닌, 같은 브라우저인지 확인용
+             */
+            _ensureBrowserId() {
+                let browserId = localStorage.getItem(DataManager.KEYS.BROWSER_ID);
+                if (!browserId) {
+                    browserId = 'browser_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem(DataManager.KEYS.BROWSER_ID, browserId);
+                    console.log('[Privacy] New browser session initialized:', browserId);
+                }
+                this._browserId = browserId;
+            }
+
+            /**
+             * URL에서 데이터 관련 파라미터 제거
+             * 누군가 URL에 데이터를 담아 공유하려 해도 무시함
+             */
+            sanitizeUrl() {
+                const url = new URL(window.location.href);
+                const dangerousParams = ['data', 'calendar', 'records', 'import', 'share', 'state', 'backup'];
+                let modified = false;
+
+                dangerousParams.forEach(param => {
+                    if (url.searchParams.has(param)) {
+                        url.searchParams.delete(param);
+                        modified = true;
+                        console.log(`[Privacy] Blocked URL parameter: ${param}`);
+                    }
+                });
+
+                // URL 해시에 데이터가 있을 경우도 제거
+                if (url.hash && url.hash.length > 1) {
+                    try {
+                        // base64 인코딩된 데이터 감지 시도
+                        const hashContent = url.hash.substring(1);
+                        if (hashContent.length > 50 || hashContent.includes('eyJ')) {
+                            url.hash = '';
+                            modified = true;
+                            console.log('[Privacy] Blocked suspicious URL hash');
+                        }
+                    } catch (e) {
+                        // 무시
+                    }
+                }
+
+                if (modified) {
+                    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+                }
+            }
+
+            /**
+             * 캘린더 데이터 로드
+             * 오직 이 브라우저의 localStorage에서만 데이터를 가져옴
+             */
+            loadCalendarData() {
+                try {
+                    const stored = localStorage.getItem(DataManager.KEYS.CALENDAR_DATA);
+                    this._data = stored ? JSON.parse(stored) : {};
+                    console.log(`[Data] Loaded ${Object.keys(this._data).length} records from local storage`);
+                } catch (e) {
+                    console.error('[Data] Failed to load data, starting fresh:', e);
+                    this._data = {};
+                }
+                return this._data;
+            }
+
+            /**
+             * 캘린더 데이터 저장
+             * 오직 이 브라우저의 localStorage에만 저장
+             * - 서버 전송: 없음
+             * - URL 노출: 없음
+             * - 쿠키 저장: 없음
+             */
+            saveCalendarData(data) {
+                try {
+                    this._data = data;
+                    localStorage.setItem(DataManager.KEYS.CALENDAR_DATA, JSON.stringify(data));
+                    console.log(`[Data] Saved ${Object.keys(data).length} records to local storage`);
+                } catch (e) {
+                    console.error('[Data] Failed to save data:', e);
+                    alert('데이터 저장에 실패했습니다. 브라우저 저장 공간을 확인해주세요.');
+                }
+            }
+
+            /**
+             * 첫 방문 여부 확인
+             */
+            isFirstVisit() {
+                return !localStorage.getItem(DataManager.KEYS.VISITED);
+            }
+
+            /**
+             * 첫 방문 완료 표시
+             */
+            markAsVisited() {
+                localStorage.setItem(DataManager.KEYS.VISITED, 'true');
+            }
+
+            /**
+             * 현재 브라우저 ID 반환 (디버깅용)
+             */
+            getBrowserId() {
+                return this._browserId;
+            }
+
+            /**
+             * 모든 데이터 삭제 (초기화 기능용)
+             */
+            clearAllData() {
+                Object.values(DataManager.KEYS).forEach(key => {
+                    localStorage.removeItem(key);
+                });
+                this._data = {};
+                console.log('[Data] All data cleared');
+            }
+        }
+
+        /**
+         * ============================================================
+         * 메인 애플리케이션
+         * ============================================================
+         */
         class DailyStatsApp {
             constructor() {
                 this.currentDate = new Date();
                 this.selectedDate = null;
                 this.currentView = 'calendar';
                 this.statsPeriod = 7;
+
+                // 데이터 관리자 초기화
+                this.dataManager = new DataManager();
+                this.data = {};
+
                 this.init();
             }
 
             init() {
-                // 프라이버시 보호: URL을 통한 데이터 공유 차단
-                this.ensurePrivateData();
+                // 1단계: URL 보안 (데이터 파라미터 제거)
+                this.dataManager.sanitizeUrl();
+
+                // 2단계: 로컬 데이터 로드 (이 브라우저에서만)
                 this.loadData();
+
+                // 3단계: UI 렌더링
                 this.renderCalendar();
                 this.bindEvents();
+
+                // 4단계: 첫 방문자 환영
+                this.checkFirstVisit();
+
+                console.log('[App] Initialization complete. Your data is private to this browser.');
             }
 
-
-            ensurePrivateData() {
-                // URL 파라미터를 통한 데이터 전달 차단
-                // 모든 데이터는 브라우저의 localStorage에만 저장되며
-                // URL 공유 시에도 다른 사용자에게 노출되지 않음
-                const url = new URL(window.location.href);
-
-                // URL에 데이터 관련 파라미터가 있으면 제거
-                const dataParams = ['data', 'calendar', 'records', 'import', 'share'];
-                let hasDataParam = false;
-
-                dataParams.forEach(param => {
-                    if (url.searchParams.has(param)) {
-                        url.searchParams.delete(param);
-                        hasDataParam = true;
-                    }
-                });
-
-                // URL이 수정되었으면 클린한 URL로 교체
-                if (hasDataParam) {
-                    window.history.replaceState({}, '', url.pathname + url.search);
-                    console.log('[Privacy] Data parameters removed from URL');
+            checkFirstVisit() {
+                if (this.dataManager.isFirstVisit()) {
+                    this.showWelcomeModal();
                 }
             }
 
+            showWelcomeModal() {
+                document.getElementById('welcome-modal').classList.add('active');
+            }
+
+            closeWelcomeModal() {
+                document.getElementById('welcome-modal').classList.remove('active');
+                this.dataManager.markAsVisited();
+            }
+
             loadData() {
-                // 중요: 모든 데이터는 이 브라우저의 localStorage에만 저장됩니다
-                // URL을 공유해도 다른 사람에게 당신의 기록이 보이지 않습니다
-                // localStorage는 브라우저별, 사용자별로 완전히 분리되어 있습니다
-                const stored = localStorage.getItem('yozumeottae_calendar_v1');
-                this.data = stored ? JSON.parse(stored) : {};
+                // DataManager를 통해 로컬 데이터만 로드
+                // URL이나 외부 소스에서 데이터를 가져오지 않음
+                this.data = this.dataManager.loadCalendarData();
             }
 
             saveData() {
-                // 데이터는 오직 이 브라우저의 localStorage에만 저장됩니다
-                // 서버 전송 없음, URL 노출 없음, 완전한 프라이버시 보장
-                localStorage.setItem('yozumeottae_calendar_v1', JSON.stringify(this.data));
+                // DataManager를 통해 로컬에만 저장
+                // 서버, URL, 쿠키에는 저장하지 않음
+                this.dataManager.saveCalendarData(this.data);
             }
 
             // 기존 데이터 마이그레이션: meeting -> meetings 배열로 변환
@@ -2034,6 +2319,9 @@
                 // 모달 내 복사/공유 버튼
                 document.getElementById('copy-sentence-btn').addEventListener('click', () => this.copySentenceToClipboard());
                 document.getElementById('share-sentence-btn').addEventListener('click', () => this.shareSentence());
+
+                // 환영 모달 시작 버튼
+                document.getElementById('welcome-start-btn').addEventListener('click', () => this.closeWelcomeModal());
             }
         }
 
