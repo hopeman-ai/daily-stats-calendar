@@ -1,0 +1,21 @@
+# Temporary files
+tmpclaude-*
+*.tmp
+
+# Backup files
+*.backup
+*.backup_*
+*_backup
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
