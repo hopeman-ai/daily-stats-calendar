@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>요즘 어때?</title>
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#4CAF50">
+
     <!-- Open Graph / Social Media Meta Tags -->
     <meta property="og:title" content="요즘 어때?" />
     <meta property="og:description" content="나를 보는 캘린더" />
@@ -50,14 +55,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5em;
+            gap: 0.3em;
         }
 
         .title-icon {
-            width: 1.45em;
-            height: 1.45em;
+            width: 1.5em;
+            height: 1.5em;
             flex-shrink: 0;
             object-fit: contain;
+            vertical-align: middle;
         }
 
         .tabs {
@@ -932,12 +938,12 @@
             h1 {
                 font-size: 2rem;
                 margin-bottom: 30px;
-                gap: 0.6em;
+                gap: 0.35em;
             }
 
             .title-icon {
-                width: 1.6em;
-                height: 1.6em;
+                width: 1.5em;
+                height: 1.5em;
             }
 
             .tabs {
